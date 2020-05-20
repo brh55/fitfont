@@ -46,6 +46,15 @@ const getCharIndex = (info, c) => {
   return -1
 }
 
+// Careful as this will break references for elements using this font
+export const clearFont = (font) => {
+  if (font) {
+    fonts[font] = null;
+  } else {
+    fonts = {};
+  }
+};
+
 export function FitFont({ id, font, halign, valign, letterspacing }) {
   
   this.root       = typeof id === 'string' ? document.getElementById(id) : id
@@ -86,17 +95,16 @@ export function FitFont({ id, font, halign, valign, letterspacing }) {
     }
   }
   
-  this._info = fonts[font]
-
   this.redraw = () => {
     const val = this._text + ''
+    const font = fonts[font]
 
     let totalWidth = 0
     let i = 0
 
     while (i<val.length && i<this.chars.length) {
       const charCode = val.charCodeAt(i)
-      let index = getCharIndex(this._info, charCode)
+      let index = getCharIndex(font, charCode)
       const charElem = this.chars[i]
       if (index === -1) {
         // Char not found in the font
@@ -104,12 +112,12 @@ export function FitFont({ id, font, halign, valign, letterspacing }) {
         charElem.href = ''
       }
       else {
-        charElem.width  = this._info[index++]
-        charElem.height = this._info[index++]
-        charElem.x      = totalWidth - this._info[index++]
-        charElem.y      = this._info[index++]
+        charElem.width  = font[index++]
+        charElem.height = font[index++]
+        charElem.x      = totalWidth - font[index++]
+        charElem.y      = font[index++]
         if (charElem.y > 128) charElem.y -= 256
-        totalWidth     += this._info[index++]
+        totalWidth     += font[index++]
         charElem.href   = font + '/' + charCode + '.png'
       }
       if (i < val.length-1) {
@@ -133,10 +141,10 @@ export function FitFont({ id, font, halign, valign, letterspacing }) {
     let offy = 0
     switch (this._valign) {
       case 'top' :    offy = 0; break
-      case 'middle' : offy -= (this._info[INDEX_ASCENT] + this._info[INDEX_DESCENT]) / 2; break
-      case 'bottom' : offy -=  this._info[INDEX_ASCENT] + this._info[INDEX_DESCENT]; break
+      case 'middle' : offy -= (font[INDEX_ASCENT] + font[INDEX_DESCENT]) / 2; break
+      case 'bottom' : offy -=  font[INDEX_ASCENT] + font[INDEX_DESCENT]; break
       case 'baseline' :
-      default :       offy -= this._info[INDEX_ASCENT]; break
+      default :       offy -= font[INDEX_ASCENT]; break
     }
 
     for (i=0; i<this.chars.length; i++){
